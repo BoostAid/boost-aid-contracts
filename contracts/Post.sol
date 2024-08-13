@@ -1,56 +1,22 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "./PostFactory.sol";
+
 // Author: @boostaid
 contract Post {
     address public owner;
+    address public parent;
     address payable public questioner;
     address payable public company;
     address[] public answerers;
-    uint public bountyInEther; // TODO: figure out if we can use chainlink to force a minimum amount of for the bounty such as $25c or $1
-    uint public companyBountyInEther; // TODO: figure out if we can use chainlink to force a minimum amount of for the bounty such as $25c or $1
+    uint public questionerBounty; // TODO: figure out if we can use chainlink to force a minimum amount of for the bounty such as $25c or $1
+    uint public companyBounty; // TODO: figure out if we can use chainlink to force a minimum amount of for the bounty such as $25c or $1
     bool locked = false;
     address winner;
 
     // TODO: Do we want to add an expiration date imo out of scope???
     // uint public expirationDate = block.timestamp;
-
-    // TODO: Move events into their own file
-    event NewQuestionPosted(
-        address indexed _questioner,
-        address indexed _company,
-        uint _questionerBountyInEther,
-        uint _companyBountyInEther
-    );
-    event QuestionerBountyIncreased(
-        address indexed _question,
-        address indexed _questioner,
-        uint _amount
-    );
-    event QuestionerBountyDecreased(
-        address indexed _question,
-        address indexed _questioner,
-        uint _amount
-    );
-    event CompanyBountyIncreased(
-        address indexed _question,
-        address indexed _company,
-        uint _amount
-    );
-    event CompanyBountyDecreased(
-        address indexed _question,
-        address indexed _company,
-        uint _amount
-    );
-    event NewAnswerAdded(address indexed _question, address indexed _answerer);
-    event AnswerRemoved(address indexed _question, address indexed _answerer);
-    event QuestionRemovedByAdmin(address indexed _question);
-    event WinnerSelected(
-        address indexed _question,
-        address indexed _winner,
-        uint _questionerBountyInEther,
-        uint _companyBountyInEther
-    );
 
     // TODO: Check if modifiers can be refactored in some way
     modifier onlyQuestioner() {
@@ -67,18 +33,12 @@ contract Post {
     }
 
     modifier payableCannotBeZero() {
-        require(
-            getEtherValue(msg.value) > 0 ether,
-            "The amount must be greater than 0"
-        );
+        require(msg.value > 0, "The amount must be greater than 0");
         _;
     }
 
-    modifier payableMustMatchAmount(uint amountInEther) {
-        require(
-            getEtherValue(msg.value) == amountInEther,
-            "Ether sent must match amount specified"
-        );
+    modifier payableMustMatchAmount(uint amount) {
+        require(msg.value == amount, "Ether sent must match amount specified");
         _;
     }
 
@@ -120,98 +80,122 @@ contract Post {
 
     // we deploy the contract because we gather funds from company contract and the user
     constructor(
+        address _owner,
+        address _parent,
         address _questioner,
         address _company,
-        uint _bountyInEther,
-        uint _companyBountyInEther
+        uint _questionerBounty,
+        uint _companyBounty
     ) payable {
         require(
-            getEtherValue(msg.value) >= 0 ether,
-            "Bounty must be greater than 0"
+            _owner != address(0),
+            "Owner address cannot be the zero address"
         );
         require(
-            getEtherValue(msg.value) == _bountyInEther + _companyBountyInEther,
+            _parent != address(0),
+            "Parent address cannot be the zero address"
+        );
+        require(
+            _questioner != address(0),
+            "Questioner address cannot be the zero address"
+        );
+        require(
+            _company != address(0),
+            "Company address cannot be the zero address"
+        );
+        require(msg.value >= 0, "Bounty must be greater than 0");
+        require(
+            msg.value == _questionerBounty + _companyBounty,
             "The amount sent must be equal to the sum of the bounties"
         );
+        owner = _owner;
+        parent = _parent;
         questioner = _questioner;
         company = _company;
-        bountyInEther = _bountyInEther;
-        companyBountyInEther = _companyBountyInEther;
-        owner = msg.sender;
+        questionerBounty = _questionerBounty;
+        companyBounty = _companyBounty;
 
-        emit NewQuestionPosted(
-            _questioner,
-            _company,
-            _bountyInEther,
-            _companyBountyInEther
+        PostFactory(parent).notifyNewQuestionPosted(
+            address(this),
+            questioner,
+            company,
+            questionerBounty,
+            companyBounty
         );
     }
 
     // TODO: Add a minimum amount they can increase the bounty by using oracle
     function increaseQuestionerBounty(
-        uint amountInEther
+        uint amount
     )
         public
         payable
         onlyQuestioner
         noWinnerSelected
         payableCannotBeZero
-        payableMustMatchAmount(amountInEther)
+        payableMustMatchAmount(amount)
     {
-        bountyInEther += amountInEther;
-        emit QuestionerBountyIncreased(
+        questionerBounty += amount;
+        PostFactory(parent).notifyQuestionerBountyIncreased(
             address(this),
-            msg.sender,
-            amountInEther
+            questioner,
+            amount
         );
     }
 
     // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
     function decreaseQuestionerBounty(
-        uint amountInEther
+        uint amount
     ) public onlyQuestioner noWinnerSelected noAnswers nonReentrant {
-        require(bountyInEther >= amountInEther, "Bounty cannot be less than 0");
         require(
-            getEtherValue(address(this).balance) >= amountInEther,
-            "Contract balance cannot be less than 0"
+            questionerBounty >= amount,
+            "Amount to be decreased by cannot be greater than the bounty"
         );
-        bountyInEther -= amountInEther;
-        bool success = questioner.send(convertToWei(amountInEther));
+        questionerBounty -= amount;
+        bool success = questioner.send(amount);
         require(success, "Failed to send ether.");
-        emit QuestionerBountyDecreased(address(this), questioner, amount);
+        PostFactory(parent).notifyQuestionerBountyDecreased(
+            address(this),
+            questioner,
+            amount
+        );
     }
 
     // TODO: Add a minimum amount they can increase the bounty by using oracle
     function increaseCompanyBounty(
-        uint amountInEther
+        uint amount
     )
         public
         payable
         onlyCompany
         noWinnerSelected
         payableCannotBeZero
-        payableMustMatchAmount(amountInEther)
+        payableMustMatchAmount(amount)
     {
-        companyBountyInEther += amountInEther;
-        emit CompanyBountyIncreased(address(this), msg.sender, amountInEther);
+        companyBounty += amount;
+        PostFactory(parent).notifyCompanyBountyIncreased(
+            address(this),
+            company,
+            amount
+        );
     }
 
     // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
     function decreaseCompanyBounty(
-        uint amountInEther
+        uint amount
     ) public onlyCompany noWinnerSelected noAnswers nonReentrant {
         require(
-            companyBountyInEther >= amountInEther,
-            "Bounty cannot be less than 0"
+            companyBounty >= amount,
+            "Amount to be decreased by cannot be greater than the bounty"
         );
-        require(
-            getEtherValue(address(this).balance) >= amountInEther,
-            "Contract balance cannot be less than 0"
-        );
-        companyBountyInEther -= amountInEther;
-        bool success = company.send(convertToWei(amountInEther));
+        companyBounty -= amount;
+        bool success = company.send(amount);
         require(success, "Failed to send ether.");
-        emit CompanyBountyDecreased(address(this), company, amountInEther);
+        PostFactory(parent).notifyCompanyBountyDecreased(
+            address(this),
+            company,
+            amount
+        );
     }
 
     function addAnswer() public noWinnerSelected {
@@ -221,7 +205,7 @@ contract Post {
         );
 
         answerers.push(msg.sender);
-        emit NewAnswerAdded(address(this), msg.sender);
+        PostFactory(parent).notifyAnswerAdded(address(this), msg.sender);
     }
 
     function removeAnswer() public noWinnerSelected isAnswerer(msg.sender) {
@@ -233,22 +217,22 @@ contract Post {
             }
         }
 
-        emit AnswerRemoved(address(this), answerer);
+        PostFactory(parent).notifyAnswerRemoved(address(this), msg.sender);
     }
 
     // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
     function removeQuestion() public noWinnerSelected nonReentrant {
         require(msg.sender == owner, "Only the owner can call this function");
 
-        bool success = company.send(convertToWei(companyBountyInEther));
+        bool success = company.send(companyBounty);
         require(success, "Failed to send ether back to company.");
-        companyBountyInEther = 0;
+        companyBounty = 0;
 
-        bool success = questioner.send(convertToWei(bountyInEther));
+        bool success = questioner.send(questionerBounty);
         require(success, "Failed to send ether back to questioner.");
-        bountyInEther = 0;
+        questionerBounty = 0;
 
-        emit QuestionRemovedByAdmin(address(this));
+        PostFactory(parent).notifyQuestionRemoved(address(this));
     }
 
     // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
@@ -257,30 +241,19 @@ contract Post {
     ) public onlyQuestioner noWinnerSelected isAnswerer(winner) nonReentrant {
         winner = winner;
 
-        uint memory questionerBountyInEther = bountyInEther;
-        uint memory companyBountyInEther = companyBountyInEther;
+        uint memory questionerBountyReward = questionerBounty;
+        uint memory companyBountyReward = companyBountyReward;
 
-        bool success = winner.send(
-            convertToWei(bountyInEther + companyBountyInEther)
-        );
+        bool success = winner.send(questionerBounty + companyBountyReward);
         require(success, "Failed to send ether to winner.");
-        bountyInEther = 0;
-        companyBountyInEther = 0;
+        questionerBounty = 0;
+        companyBountyReward = 0;
 
-        emit WinnerSelected(
+        PostFactory(parent).notifyWinnerSelected(
             address(this),
             winner,
-            questionerBountyInEther,
-            companyBountyInEther
+            questionerBountyReward,
+            companyBountyReward
         );
-    }
-
-    // TODO: move the unit conversion methods somewhere else
-    function getEtherValue(uint256 weiAmount) public pure returns (uint256) {
-        return weiAmount / 1 ether; // 1 ether is equal to 10^18 wei
-    }
-
-    function convertToWei(uint256 etherAmount) public pure returns (uint256) {
-        return etherAmount * 1 ether; // 1 ether is equal to 10^18 wei
     }
 }
