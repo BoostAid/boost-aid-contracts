@@ -65,7 +65,20 @@ contract PostFactory {
     }
 
     constructor() {
-        owner = msg.sender;
+        owner =  msg.sender;
+    }
+
+    fallback() external payable {
+    }
+
+    receive() external payable {
+    }
+
+    function deposit() external payable {
+    }
+
+    function withdraw() onlyOwner public {
+        payable(owner).transfer(address(this).balance);
     }
 
     // amounts come from escrow wallet
@@ -82,7 +95,7 @@ contract PostFactory {
         );
         Post newPost = (new Post){value: msg.value}(
             msg.sender,
-            address(this),
+            payable(address(this)),
             questioner,
             company,
             questionerBounty,

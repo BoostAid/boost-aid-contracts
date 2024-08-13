@@ -6,7 +6,7 @@ import "./PostFactory.sol";
 // Author: @boostaid
 contract Post {
     address public owner;
-    address public parent;
+    address payable public parent;
     address payable public questioner;
     address payable public company;
     address[] public answerers;
@@ -81,7 +81,7 @@ contract Post {
     // we deploy the contract because we gather funds from company contract and the user
     constructor(
         address _owner,
-        address _parent,
+        address payable _parent,
         address payable _questioner,
         address payable _company,
         uint _questionerBounty,
