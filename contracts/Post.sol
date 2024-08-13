@@ -13,7 +13,7 @@ contract Post {
     uint public questionerBounty; // TODO: figure out if we can use chainlink to force a minimum amount of for the bounty such as $25c or $1
     uint public companyBounty; // TODO: figure out if we can use chainlink to force a minimum amount of for the bounty such as $25c or $1
     bool locked = false;
-    address winner;
+    address payable winner;
 
     // TODO: Do we want to add an expiration date imo out of scope???
     // uint public expirationDate = block.timestamp;
@@ -66,15 +66,15 @@ contract Post {
     }
 
     modifier isAnswerer(address answerer) {
-        bool isAnswerer = false;
+        bool foundAnswerer = false;
         for (uint i = 0; i < answerers.length; i++) {
             if (answerers[i] == answerer) {
-                isAnswerer = true;
+                foundAnswerer = true;
                 break;
             }
         }
 
-        require(isAnswerer, "Address is not an answerer");
+        require(foundAnswerer, "Address is not an answerer");
         _;
     }
 
@@ -82,8 +82,8 @@ contract Post {
     constructor(
         address _owner,
         address _parent,
-        address _questioner,
-        address _company,
+        address payable _questioner,
+        address payable _company,
         uint _questionerBounty,
         uint _companyBounty
     ) payable {
@@ -228,7 +228,7 @@ contract Post {
         require(success, "Failed to send ether back to company.");
         companyBounty = 0;
 
-        bool success = questioner.send(questionerBounty);
+        success = questioner.send(questionerBounty);
         require(success, "Failed to send ether back to questioner.");
         questionerBounty = 0;
 
@@ -237,12 +237,12 @@ contract Post {
 
     // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
     function chooseWinner(
-        address winner
+        address payable _winner
     ) public onlyQuestioner noWinnerSelected isAnswerer(winner) nonReentrant {
-        winner = winner;
+        winner = _winner;
 
-        uint memory questionerBountyReward = questionerBounty;
-        uint memory companyBountyReward = companyBountyReward;
+        uint questionerBountyReward = questionerBounty;
+        uint companyBountyReward = companyBounty;
 
         bool success = winner.send(questionerBounty + companyBountyReward);
         require(success, "Failed to send ether to winner.");

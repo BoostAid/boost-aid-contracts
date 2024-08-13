@@ -52,15 +52,15 @@ contract PostFactory {
     }
 
     modifier isPostEvoking() {
-        bool isPostEvoking = false;
+        bool foundPostEvoking = false;
         for (uint i = 0; i < posts.length; i++) {
             if (msg.sender == address(posts[i])) {
-                isPostEvoking = true;
+                foundPostEvoking = true;
                 break;
             }
         }
 
-        require(isPostEvoking, "Only a child post can call this function");
+        require(foundPostEvoking, "Only a child post can call this function");
         _;
     }
 
@@ -70,8 +70,8 @@ contract PostFactory {
 
     // amounts come from escrow wallet
     function createPost(
-        address questioner,
-        address company,
+        address payable questioner,
+        address payable company,
         uint questionerBounty,
         uint companyBounty
     ) public payable {
@@ -167,7 +167,7 @@ contract PostFactory {
         emit QuestionerBountyDecreased(post, questioner, amount);
     }
 
-    function notifyQuestionBountyIncreased(
+    function notifyQuestionerBountyIncreased(
         address post,
         address questioner,
         uint amount
