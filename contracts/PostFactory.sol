@@ -65,19 +65,18 @@ contract PostFactory {
     }
 
     constructor() {
-        owner =  msg.sender;
+        owner = msg.sender;
     }
 
-    fallback() external payable {
+    fallback() external payable {}
+
+    receive() external payable {}
+
+    function getBalance() public view returns (uint) {
+        return address(this).balance;
     }
 
-    receive() external payable {
-    }
-
-    function deposit() external payable {
-    }
-
-    function withdraw() onlyOwner public {
+    function withdraw() public onlyOwner {
         payable(owner).transfer(address(this).balance);
     }
 
@@ -90,7 +89,7 @@ contract PostFactory {
     ) public payable {
         require(msg.value > 0, "You must send some ether");
         require(
-            questionerBounty + companyBounty == msg.value,
+            msg.value >= questionerBounty + companyBounty,
             "The bounties must add up to the amount sent"
         );
         Post newPost = (new Post){value: msg.value}(
@@ -111,7 +110,13 @@ contract PostFactory {
         address company,
         uint questionerBounty,
         uint companyBounty
-    ) public isPostEvoking {
+    ) public {
+        Post caller = Post(post);
+        require(
+            caller.owner() == address(this),
+            "Only a child post can call this function"
+        );
+
         emit NewQuestionPosted(
             post,
             questioner,
