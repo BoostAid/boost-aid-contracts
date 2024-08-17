@@ -40,7 +40,7 @@ contract PostFactory {
         address indexed questioner,
         uint amount
     );
-    event QuestionBountyIncreased(
+    event QuestionerBountyIncreased(
         address indexed post,
         address indexed questioner,
         uint amount
@@ -105,15 +105,15 @@ contract PostFactory {
     }
 
     function notifyNewQuestionPosted(
+        address parent,
         address post,
         address questioner,
         address company,
         uint questionerBounty,
         uint companyBounty
     ) public {
-        Post caller = Post(post);
         require(
-            caller.owner() == address(this),
+            parent == address(this),
             "Only a child post can call this function"
         );
 
@@ -190,6 +190,10 @@ contract PostFactory {
         address questioner,
         uint amount
     ) public isPostEvoking {
-        emit QuestionBountyIncreased(post, questioner, amount);
+        emit QuestionerBountyIncreased(post, questioner, amount);
+    }
+
+    function getPostsLength() public view returns (uint) {
+        return posts.length;
     }
 }

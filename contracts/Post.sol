@@ -13,7 +13,7 @@ contract Post {
     uint public questionerBounty; // TODO: figure out if we can use chainlink to force a minimum amount of for the bounty such as $25c or $1
     uint public companyBounty; // TODO: figure out if we can use chainlink to force a minimum amount of for the bounty such as $25c or $1
     bool locked = false;
-    address payable winner;
+    address payable public winner;
 
     // TODO: Do we want to add an expiration date imo out of scope???
     // uint public expirationDate = block.timestamp;
@@ -108,14 +108,15 @@ contract Post {
             msg.value == _questionerBounty + _companyBounty,
             "The amount sent must be equal to the sum of the bounties"
         );
+
         owner = _owner;
         parent = _parent;
         questioner = _questioner;
         company = _company;
         questionerBounty = _questionerBounty;
         companyBounty = _companyBounty;
-
         PostFactory(parent).notifyNewQuestionPosted(
+            parent,
             address(this),
             questioner,
             company,
@@ -238,16 +239,16 @@ contract Post {
     // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
     function chooseWinner(
         address payable _winner
-    ) public onlyQuestioner noWinnerSelected isAnswerer(winner) nonReentrant {
+    ) public onlyQuestioner noWinnerSelected isAnswerer(_winner) nonReentrant {
         winner = _winner;
 
         uint questionerBountyReward = questionerBounty;
         uint companyBountyReward = companyBounty;
 
-        bool success = winner.send(questionerBounty + companyBountyReward);
+        bool success = winner.send(questionerBounty + companyBounty);
         require(success, "Failed to send ether to winner.");
         questionerBounty = 0;
-        companyBountyReward = 0;
+        companyBounty = 0;
 
         PostFactory(parent).notifyWinnerSelected(
             address(this),
@@ -255,5 +256,9 @@ contract Post {
             questionerBountyReward,
             companyBountyReward
         );
+    }
+
+    function getAnswerersLength() public view returns (uint) {
+        return answerers.length;
     }
 }
