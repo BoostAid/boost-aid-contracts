@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "smart contracts for boost aid",
   "scripts": {
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile"
   },
   "author": "Boost Aid",
   "license": "ISC",

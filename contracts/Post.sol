@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./PostFactory.sol";
+import "./IPostFactory.sol";
 
 // Author: @boostaid
 contract Post {
@@ -115,7 +115,7 @@ contract Post {
         company = _company;
         questionerBounty = _questionerBounty;
         companyBounty = _companyBounty;
-        PostFactory(parent).notifyNewQuestionPosted(
+        IPostFactory(parent).notifyNewQuestionPosted(
             parent,
             address(this),
             questioner,
@@ -137,7 +137,7 @@ contract Post {
         payableMustMatchAmount(amount)
     {
         questionerBounty += amount;
-        PostFactory(parent).notifyQuestionerBountyIncreased(
+        IPostFactory(parent).notifyQuestionerBountyIncreased(
             address(this),
             questioner,
             amount
@@ -155,7 +155,7 @@ contract Post {
         questionerBounty -= amount;
         bool success = questioner.send(amount);
         require(success, "Failed to send ether.");
-        PostFactory(parent).notifyQuestionerBountyDecreased(
+        IPostFactory(parent).notifyQuestionerBountyDecreased(
             address(this),
             questioner,
             amount
@@ -174,7 +174,7 @@ contract Post {
         payableMustMatchAmount(amount)
     {
         companyBounty += amount;
-        PostFactory(parent).notifyCompanyBountyIncreased(
+        IPostFactory(parent).notifyCompanyBountyIncreased(
             address(this),
             company,
             amount
@@ -192,7 +192,7 @@ contract Post {
         companyBounty -= amount;
         bool success = company.send(amount);
         require(success, "Failed to send ether.");
-        PostFactory(parent).notifyCompanyBountyDecreased(
+        IPostFactory(parent).notifyCompanyBountyDecreased(
             address(this),
             company,
             amount
@@ -206,7 +206,7 @@ contract Post {
         );
 
         answerers.push(msg.sender);
-        PostFactory(parent).notifyAnswerAdded(address(this), msg.sender);
+        IPostFactory(parent).notifyAnswerAdded(address(this), msg.sender);
     }
 
     function removeAnswer() public noWinnerSelected isAnswerer(msg.sender) {
@@ -218,7 +218,7 @@ contract Post {
             }
         }
 
-        PostFactory(parent).notifyAnswerRemoved(address(this), msg.sender);
+        IPostFactory(parent).notifyAnswerRemoved(address(this), msg.sender);
     }
 
     // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
@@ -233,7 +233,7 @@ contract Post {
         require(success, "Failed to send ether back to questioner.");
         questionerBounty = 0;
 
-        PostFactory(parent).notifyQuestionRemoved(address(this));
+        IPostFactory(parent).notifyQuestionRemoved(address(this));
     }
 
     // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
@@ -250,7 +250,7 @@ contract Post {
         questionerBounty = 0;
         companyBounty = 0;
 
-        PostFactory(parent).notifyWinnerSelected(
+        IPostFactory(parent).notifyWinnerSelected(
             address(this),
             winner,
             questionerBountyReward,

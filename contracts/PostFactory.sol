@@ -2,9 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "./Post.sol";
+import "./IPostFactory.sol";
 
 // Author: @boostaid
-contract PostFactory {
+contract PostFactory is IPostFactory {
     // TODO: maybe store the index in the post for faster lookups
     Post[] public posts;
     address public owner;
@@ -111,7 +112,7 @@ contract PostFactory {
         address company,
         uint questionerBounty,
         uint companyBounty
-    ) public {
+    ) external {
         require(
             parent == address(this),
             "Only a child post can call this function"
@@ -126,7 +127,7 @@ contract PostFactory {
         );
     }
 
-    function notifyQuestionRemoved(address post) public isPostEvoking {
+    function notifyQuestionRemoved(address post) external isPostEvoking {
         for (uint i = 0; i < posts.length; i++) {
             if (address(posts[i]) == post) {
                 posts[i] = posts[posts.length - 1];
@@ -143,21 +144,21 @@ contract PostFactory {
         address winner,
         uint questionerBounty,
         uint companyBounty
-    ) public isPostEvoking {
+    ) external isPostEvoking {
         emit WinnerSelected(post, winner, questionerBounty, companyBounty);
     }
 
     function notifyAnswerRemoved(
         address post,
         address answerer
-    ) public isPostEvoking {
+    ) external isPostEvoking {
         emit AnswerRemoved(post, answerer);
     }
 
     function notifyAnswerAdded(
         address post,
         address answerer
-    ) public isPostEvoking {
+    ) external isPostEvoking {
         emit AnswerAdded(post, answerer);
     }
 
@@ -165,7 +166,7 @@ contract PostFactory {
         address post,
         address company,
         uint amount
-    ) public isPostEvoking {
+    ) external isPostEvoking {
         emit CompanyBountyDecreased(post, company, amount);
     }
 
@@ -173,7 +174,7 @@ contract PostFactory {
         address post,
         address company,
         uint amount
-    ) public isPostEvoking {
+    ) external isPostEvoking {
         emit CompanyBountyIncreased(post, company, amount);
     }
 
@@ -181,7 +182,7 @@ contract PostFactory {
         address post,
         address questioner,
         uint amount
-    ) public isPostEvoking {
+    ) external isPostEvoking {
         emit QuestionerBountyDecreased(post, questioner, amount);
     }
 
@@ -189,11 +190,11 @@ contract PostFactory {
         address post,
         address questioner,
         uint amount
-    ) public isPostEvoking {
+    ) external isPostEvoking {
         emit QuestionerBountyIncreased(post, questioner, amount);
     }
 
-    function getPostsLength() public view returns (uint) {
+    function getPostsLength() external view returns (uint) {
         return posts.length;
     }
 }
