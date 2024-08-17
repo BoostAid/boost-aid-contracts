@@ -20,11 +20,8 @@ async function main() {
     contractAddress,
     signer
   );
-  const tx = await postContract.increaseQuestionerBounty(
-    ethers.parseEther('0.0000278'),
-    {
-      value: ethers.parseEther('0.0000278'),
-    }
+  const tx = await postContract.chooseWinner(
+    '0x43Db655aeFFbFAf8575A58BE19abaad401f8c4B2'
   );
   console.log(`Transaction hash: ${tx.hash}`);
 

@@ -199,6 +199,7 @@ contract Post {
         );
     }
 
+    // TODO: block the same address from being able to answer multiple times
     function addAnswer() public noWinnerSelected {
         require(
             msg.sender != questioner || msg.sender != company,

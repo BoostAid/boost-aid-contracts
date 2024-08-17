@@ -3,9 +3,7 @@ import 'dotenv/config';
 
 async function main() {
   const contractAddress = process.env.ARB_SEPOLIA_POST_CONTRACT_ADDRESS!;
-  const wallet = new ethers.Wallet(
-    process.env.ARB_WALLET_QUESTIONER_PRIVATE_KEY!
-  );
+  const wallet = new ethers.Wallet(process.env.ARB_WALLET_COMPANY_PRIVATE_KEY!);
 
   // arbitrum sepolia connection
   const provider = new ethers.AlchemyProvider(
@@ -20,11 +18,8 @@ async function main() {
     contractAddress,
     signer
   );
-  const tx = await postContract.increaseQuestionerBounty(
-    ethers.parseEther('0.0000278'),
-    {
-      value: ethers.parseEther('0.0000278'),
-    }
+  const tx = await postContract.decreaseCompanyBounty(
+    ethers.parseEther('0.0000178'),
   );
   console.log(`Transaction hash: ${tx.hash}`);
 
