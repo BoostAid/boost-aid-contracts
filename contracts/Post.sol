@@ -1,5 +1,5 @@
-//SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.18;
 
 import "./IPostFactory.sol";
 
@@ -10,15 +10,11 @@ contract Post {
     address payable public questioner;
     address payable public company;
     address[] public answerers;
-    uint public questionerBounty; // TODO: figure out if we can use chainlink to force a minimum amount of for the bounty such as $25c or $1
-    uint public companyBounty; // TODO: figure out if we can use chainlink to force a minimum amount of for the bounty such as $25c or $1
+    uint public questionerBounty;
+    uint public companyBounty;
     bool locked = false;
     address payable public winner;
 
-    // TODO: Do we want to add an expiration date imo out of scope???
-    // uint public expirationDate = block.timestamp;
-
-    // TODO: Check if modifiers can be refactored in some way
     modifier onlyQuestioner() {
         require(
             msg.sender == questioner,
@@ -125,7 +121,6 @@ contract Post {
         );
     }
 
-    // TODO: Add a minimum amount they can increase the bounty by using oracle
     function increaseQuestionerBounty(
         uint amount
     )
@@ -144,7 +139,6 @@ contract Post {
         );
     }
 
-    // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
     function decreaseQuestionerBounty(
         uint amount
     ) public onlyQuestioner noWinnerSelected noAnswers nonReentrant {
@@ -162,7 +156,6 @@ contract Post {
         );
     }
 
-    // TODO: Add a minimum amount they can increase the bounty by using oracle
     function increaseCompanyBounty(
         uint amount
     )
@@ -181,7 +174,6 @@ contract Post {
         );
     }
 
-    // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
     function decreaseCompanyBounty(
         uint amount
     ) public onlyCompany noWinnerSelected noAnswers nonReentrant {
@@ -199,12 +191,18 @@ contract Post {
         );
     }
 
-    // TODO: block the same address from being able to answer multiple times
     function addAnswer() public noWinnerSelected {
         require(
             msg.sender != questioner || msg.sender != company,
             "Only addresses that are not the questioner or company can call this function"
         );
+
+        for (uint i = 0; i < answerers.length; i++) {
+            require(
+                answerers[i] != msg.sender,
+                "Address has already been added as an answerer"
+            );
+        }
 
         answerers.push(msg.sender);
         IPostFactory(parent).notifyAnswerAdded(address(this), msg.sender);
@@ -222,7 +220,6 @@ contract Post {
         IPostFactory(parent).notifyAnswerRemoved(address(this), msg.sender);
     }
 
-    // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
     function removeQuestion() public noWinnerSelected nonReentrant {
         require(msg.sender == owner, "Only the owner can call this function");
 
@@ -237,7 +234,6 @@ contract Post {
         IPostFactory(parent).notifyQuestionRemoved(address(this));
     }
 
-    // TODO: since the contract is paying out we need to ensure gas is also added, maybe oracle helps with this too
     function chooseWinner(
         address payable _winner
     ) public onlyQuestioner noWinnerSelected isAnswerer(_winner) nonReentrant {

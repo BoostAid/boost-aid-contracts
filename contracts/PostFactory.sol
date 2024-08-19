@@ -1,12 +1,11 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.18;
 
 import "./Post.sol";
 import "./IPostFactory.sol";
 
 // Author: @boostaid
 contract PostFactory is IPostFactory {
-    // TODO: maybe store the index in the post for faster lookups
     Post[] public posts;
     address public owner;
 

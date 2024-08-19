@@ -3,7 +3,7 @@ import 'dotenv/config';
 
 async function main() {
   const contractAddress = process.env.ARB_SEPOLIA_POST_CONTRACT_ADDRESS!;
-  const wallet = new ethers.Wallet(process.env.ARB_WALLET_PRIVATE_KEY!);
+  const wallet = new ethers.Wallet(process.env.OWNER_PRIVATE_KEY!);
 
   // arbitrum sepolia connection
   const provider = new ethers.AlchemyProvider(

@@ -272,6 +272,37 @@ describe('PostFactory', () => {
         .withArgs(await postContract.getAddress(), answerer.address);
     });
 
+    it('Answerer cannot add an answer if they already answered', async () => {
+      const { postFactory, questioner, company, answerer } = await loadFixture(
+        deployPostFactory
+      );
+
+      // create post
+      const bountyAmount = hre.ethers.parseEther('0.0005');
+      await postFactory.createPost(
+        questioner,
+        company,
+        bountyAmount,
+        bountyAmount,
+        { value: hre.ethers.parseEther('0.001') }
+      );
+
+      // add answer
+      const post = await postFactory.posts(0);
+      const postContract = await hre.ethers.getContractAt(
+        'Post',
+        post,
+        answerer // IMPORTANT: answerer should be signer as we are interacting with the contract as answerer
+      );
+      await postContract.addAnswer();
+
+      expect(await postContract.answerers(0)).to.equal(answerer.address);
+
+      await expect(postContract.addAnswer()).to.be.revertedWith(
+        'Address has already been added as an answerer'
+      );
+    });
+
     it('Answerer can remove an answer', async () => {
       const { postFactory, questioner, company, answerer } = await loadFixture(
         deployPostFactory
