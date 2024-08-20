@@ -13,11 +13,16 @@ const config: HardhatUserConfig = {
       url: process.env.PUPPYNET_TESTNET_RPC_URL || '',
       accounts: [process.env.OWNER_PRIVATE_KEY || ''],
     },
+    shibarium: {
+      url: process.env.SHIBARIUM_MAINNET_RPC_URL || '',
+      accounts: [process.env.OWNER_PRIVATE_KEY || ''],
+    },
   },
   etherscan: {
     apiKey: {
       arbitrumSepolia: process.env.ARBISCAN_API_KEY || '',
       shibariumTestnet: 'empty',
+      shibarium: 'empty',
     },
     customChains: [
       {
@@ -26,6 +31,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: 'https://puppyscan.shib.io/api',
           browserURL: 'https://puppyscan.shib.io',
+        },
+      },
+      {
+        network: 'shibarium',
+        chainId: 109,
+        urls: {
+          apiURL: 'https://www.shibariumscan.io/api',
+          browserURL: 'https://www.shibariumscan.io',
         },
       },
     ],

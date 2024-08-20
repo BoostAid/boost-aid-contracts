@@ -24,5 +24,3 @@ To deploy the contracts run the command `npx hardhat ignition deploy ignition/mo
 ## Verifying
 
 To verify a contract run the command `npx hardhat verify --network [network] [deployment address]`. Replace the `[network]` with the value from `npx hardhat verify --list-networks` you wish to use. Replace `[deployment address]` with the address that the previous command gave out.
-
-MIT LICENSE
